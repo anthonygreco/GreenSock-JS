@@ -1,12 +1,12 @@
 /*!
  * VERSION: beta 0.1.0
- * DATE: 2014-01-15
+ * DATE: 2014-01-16
  * UPDATES AND DOCS AT: http://www.greensock.com
  *
  * @license Copyright (c) 2008-2014, GreenSock. All rights reserved.
  * This work is subject to the terms at http://www.greensock.com/terms_of_use.html or for
  * Club GreenSock members, the software agreement that was issued with your membership.
- * 
+ *
  * @author: Jack Doyle, jack@greensock.com
  */
 (window._gsQueue || (window._gsQueue = [])).push( function() {
@@ -58,7 +58,7 @@
 
 		//parses the transform values for an element, returning an object with x, y, scaleX, scaleY, rotation, skewX, and skewY properties. Note: by default (for performance reasons), all skewing is combined into skewX and rotation but skewY still has a place in the transform object so that we can record how much of the skew is attributed to skewX vs skewY. Remember, a skewY of 10 looks the same as a rotation of 10 and skewX of -10.
 		_getTransform = function(t, rec) {
-			var s = t.attr("transform").localMatrix,
+			var s = t.transform().localMatrix,
 				min = 0.000001,
 				a = s.a,
 				b = s.b,
@@ -110,13 +110,13 @@
 		},
 
 
-		RaphaelPlugin = window._gsDefine.plugin({
-			propName: "raphael",
+		SnapPlugin = window._gsDefine.plugin({
+			propName: "snap",
 			API: 2,
 
 			//called when the tween renders for the first time. This is where initial values should be recorded and any setup routines should run.
 			init: function(target, value, tween) {
-				if (!target.attr) { //raphael must have attr() method
+				if (!target.attr) { //snap must have attr() method
 					return false;
 				}
 				this._target = target;
@@ -156,7 +156,7 @@
 						p:p,
 						b:s,
 						f:false,
-						n:"raphael_" + p,
+						n:"snap_" + p,
 						r:false,
 						type:0};
 
@@ -202,7 +202,7 @@
 
 					}
 
-					this._overwriteProps.push("raphael_" + p);
+					this._overwriteProps.push("snap_" + p);
 					if (pt._next) {
 						pt._next._prev = pt;
 					}
@@ -262,7 +262,7 @@
 			}
 
 		}),
-		p = RaphaelPlugin.prototype;
+		p = SnapPlugin.prototype;
 
 	//compares the beginning x, y, scaleX, scaleY, rotation, and skewX properties with the ending ones and adds PropTweens accordingly wherever necessary. We must tween them individually (rather than just tweening the matrix values) so that elgant overwriting can occur, like if one tween is controlling scaleX, scaleY, and rotation and then another one starts mid-tween that is trying to control the scaleX only - this tween should continue tweening scaleY and rotation.
 	p._parseTransform = function(t, v) {
@@ -329,16 +329,17 @@
 			}
 
 			if (v.localPivot) {
-				mtx = t.attr("transform").localMatrix;
-				dx += t.attr("x");
-				dy += t.attr("y");
+				mtx = t.transform().localMatrix;
+				dx += t.getBBox().x;
+				dy += t.getBBox().y;
 				this._pxl = dx;
 				this._pyl = dy;
 				this._pxg = dx * mtx.a + dy * mtx.c + mtx.e - m1.tx;
 				this._pyg = dx * mtx.b + dy * mtx.d + mtx.f - m1.ty;
 			} else {
-				var m = new Snap.Matrix();
-				mtx = m.add(t.a, t.b, t.c, t.d, t.e, t.f).invert();
+        var matrix = new Snap.Matrix(),
+        current = matrix.add(t.transform().localMatrix.a, t.transform().localMatrix.b, t.transform().localMatrix.c, t.transform().localMatrix.d, t.transform().localMatrix.e, t.transform().localMatrix.f);
+				mtx = current.invert();
 				this._pxl = dx * mtx.a + dy * mtx.c + mtx.e;
 				this._pyl = dx * mtx.b + dy * mtx.d + mtx.f;
 				this._pxg = dx - m1.tx;
@@ -360,7 +361,7 @@
 				if (pt._next) {
 					pt._next._prev = pt;
 				}
-				this._overwriteProps.push("raphael_" + p);
+				this._overwriteProps.push("snap_" + p);
 			}
 		}
 	};
