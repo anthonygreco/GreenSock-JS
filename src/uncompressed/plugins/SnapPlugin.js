@@ -337,8 +337,8 @@
 				this._pxg = dx * mtx.a + dy * mtx.c + mtx.e - m1.tx;
 				this._pyg = dx * mtx.b + dy * mtx.d + mtx.f - m1.ty;
 			} else {
-        var matrix = new Snap.Matrix(),
-        current = matrix.add(t.transform().localMatrix.a, t.transform().localMatrix.b, t.transform().localMatrix.c, t.transform().localMatrix.d, t.transform().localMatrix.e, t.transform().localMatrix.f);
+        		var matrix = new Snap.Matrix(),
+        		current = matrix.add(t.transform().localMatrix.a, t.transform().localMatrix.b, t.transform().localMatrix.c, t.transform().localMatrix.d, t.transform().localMatrix.e, t.transform().localMatrix.f);
 				mtx = current.invert();
 				this._pxl = dx * mtx.a + dy * mtx.c + mtx.e;
 				this._pyl = dx * mtx.b + dy * mtx.d + mtx.f;
