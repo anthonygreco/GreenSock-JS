@@ -1,24 +1,26 @@
 /*!
- * VERSION: beta 0.2.0
- * DATE: 2013-05-07
- * UPDATES AND DOCS AT: http://www.greensock.com
+ * VERSION: 0.3.0
+ * DATE: 2017-01-17
+ * UPDATES AND DOCS AT: http://greensock.com
  *
- * @license Copyright (c) 2008-2013, GreenSock. All rights reserved.
- * This work is subject to the terms at http://www.greensock.com/terms_of_use.html or for
+ * @license Copyright (c) 2008-2017, GreenSock. All rights reserved.
+ * This work is subject to the terms at http://greensock.com/standard-license or for
  * Club GreenSock members, the software agreement that was issued with your membership.
  * 
  * @author: Jack Doyle, jack@greensock.com
  **/
-(window._gsQueue || (window._gsQueue = [])).push( function() {
+var _gsScope = (typeof(module) !== "undefined" && module.exports && typeof(global) !== "undefined") ? global : this || window; //helps ensure compatibility with AMD/RequireJS and CommonJS/Node
+(_gsScope._gsQueue || (_gsScope._gsQueue = [])).push( function() {
 
 	"use strict";
 
-	window._gsDefine.plugin({
+	_gsScope._gsDefine.plugin({
 		propName: "directionalRotation",
+		version: "0.3.0",
 		API: 2,
 
 		//called when the tween renders for the first time. This is where initial values should be recorded and any setup routines should run.
-		init: function(target, value, tween) {
+		init: function(target, value, tween, index) {
 			if (typeof(value) !== "object") {
 				value = {rotation:value};
 			}
@@ -28,7 +30,11 @@
 				p, v, start, end, dif, split;
 			for (p in value) {
 				if (p !== "useRadians") {
-					split = (value[p] + "").split("_");
+					end = value[p];
+					if (typeof(end) === "function") {
+						end = end(index, target);
+					}
+					split = (end + "").split("_");
 					v = split[0];
 					start = parseFloat( (typeof(target[p]) !== "function") ? target[p] : target[ ((p.indexOf("set") || typeof(target["get" + p.substr(3)]) !== "function") ? p : "get" + p.substr(3)) ]() );
 					end = this.finals[p] = (typeof(v) === "string" && v.charAt(1) === "=") ? start + parseInt(v.charAt(0) + "1", 10) * Number(v.substr(2)) : Number(v) || 0;
@@ -76,4 +82,18 @@
 
 	})._autoCSS = true;
 
-}); if (window._gsDefine) { window._gsQueue.pop()(); }
+}); if (_gsScope._gsDefine) { _gsScope._gsQueue.pop()(); }
+
+//export to AMD/RequireJS and CommonJS/Node (precursor to full modular build system coming at a later date)
+(function(name) {
+	"use strict";
+	var getGlobal = function() {
+		return (_gsScope.GreenSockGlobals || _gsScope)[name];
+	};
+	if (typeof(define) === "function" && define.amd) { //AMD
+		define(["TweenLite"], getGlobal);
+	} else if (typeof(module) !== "undefined" && module.exports) { //node
+		require("../TweenLite.js");
+		module.exports = getGlobal();
+	}
+}("DirectionalRotationPlugin"));

@@ -1,15 +1,16 @@
 /*!
- * VERSION: beta 0.1.5
- * DATE: 2013-08-29
- * UPDATES AND DOCS AT: http://www.greensock.com
+ * VERSION: 0.2.1
+ * DATE: 2017-01-17
+ * UPDATES AND DOCS AT: http://greensock.com
  *
- * @license Copyright (c) 2008-2013, GreenSock. All rights reserved.
- * This work is subject to the terms at http://www.greensock.com/terms_of_use.html or for
+ * @license Copyright (c) 2008-2017, GreenSock. All rights reserved.
+ * This work is subject to the terms at http://greensock.com/standard-license or for
  * Club GreenSock members, the software agreement that was issued with your membership.
  * 
  * @author: Jack Doyle, jack@greensock.com
  **/
-(window._gsQueue || (window._gsQueue = [])).push( function() {
+var _gsScope = (typeof(module) !== "undefined" && module.exports && typeof(global) !== "undefined") ? global : this || window; //helps ensure compatibility with AMD/RequireJS and CommonJS/Node
+(_gsScope._gsQueue || (_gsScope._gsQueue = [])).push( function() {
 
 	"use strict";
 
@@ -54,7 +55,7 @@
 		},
 		_parseColorFilter = function(t, v, pg) {
 			if (!_ColorFilter) {
-				_ColorFilter = (window.ColorFilter || window.createjs.ColorFilter);
+				_ColorFilter = (_gsScope.ColorFilter || _gsScope.createjs.ColorFilter);
 				if (!_ColorFilter) {
 					throw("EaselPlugin error: The EaselJS ColorFilter JavaScript file wasn't loaded.");
 				}
@@ -175,7 +176,7 @@
 
 		_parseColorMatrixFilter = function(t, v, pg) {
 			if (!_ColorMatrixFilter) {
-				_ColorMatrixFilter = (window.ColorMatrixFilter || window.createjs.ColorMatrixFilter);
+				_ColorMatrixFilter = (_gsScope.ColorMatrixFilter || _gsScope.createjs.ColorMatrixFilter);
 				if (!_ColorMatrixFilter) {
 					throw("EaselPlugin error: The EaselJS ColorMatrixFilter JavaScript file wasn't loaded.");
 				}
@@ -225,17 +226,22 @@
 		};
 
 
-	window._gsDefine.plugin({
+	_gsScope._gsDefine.plugin({
 		propName: "easel",
 		priority: -1,
+		version: "0.2.1",
 		API: 2,
 
 		//called when the tween renders for the first time. This is where initial values should be recorded and any setup routines should run.
-		init: function(target, value, tween) {
+		init: function(target, value, tween, index) {
 			this._target = target;
-			var p, pt, tint, colorMatrix;
+			var p, pt, tint, colorMatrix, end, labels, i;
 			for (p in value) {
 
+				end = value[p];
+				if (typeof(end) === "function") {
+					end = end(index, target);
+				}
 				if (p === "colorFilter" || p === "tint" || p === "tintAmount" || p === "exposure" || p === "brightness") {
 					if (!tint) {
 						_parseColorFilter(target, value.colorFilter || value, this);
@@ -249,8 +255,15 @@
 					}
 
 				} else if (p === "frame") {
-					this._firstPT = pt = {_next:this._firstPT, t:target, p:"gotoAndStop", s:target.currentFrame, f:true, n:"frame", pr:0, type:0, r:true};
-					pt.c = (typeof(value[p]) === "number") ? value[p] - pt.s : (typeof(value[p]) === "string") ? parseFloat(value[p].split("=").join("")) : 0;
+					this._firstPT = pt = {_next:this._firstPT, t:target, p:"gotoAndStop", s:target.currentFrame, f:true, n:"frame", pr:0, type:0, m:Math.round};
+					if (typeof(end) === "string" && end.charAt(1) !== "=" && (labels = target.labels)) {
+						for (i = 0; i < labels.length; i++) {
+							if (labels[i].label === end) {
+								end = labels[i].position;
+							}
+						}
+					}
+					pt.c = (typeof(end) === "number") ? end - pt.s : parseFloat((end+"").split("=").join(""));
 					if (pt._next) {
 						pt._next._prev = pt;
 					}
@@ -258,7 +271,7 @@
 				} else if (target[p] != null) {
 					this._firstPT = pt = {_next:this._firstPT, t:target, p:p, f:(typeof(target[p]) === "function"), n:p, pr:0, type:0};
 					pt.s = (!pt.f) ? parseFloat(target[p]) : target[ ((p.indexOf("set") || typeof(target["get" + p.substr(3)]) !== "function") ? p : "get" + p.substr(3)) ]();
-					pt.c = (typeof(value[p]) === "number") ? value[p] - pt.s : (typeof(value[p]) === "string") ? parseFloat(value[p].split("=").join("")) : 0;
+					pt.c = (typeof(end) === "number") ? end - pt.s : (typeof(end) === "string") ? parseFloat(end.split("=").join("")) : 0;
 
 					if (pt._next) {
 						pt._next._prev = pt;
@@ -276,8 +289,8 @@
 				val;
 			while (pt) {
 				val = pt.c * v + pt.s;
-				if (pt.r) {
-					val = (val + ((val > 0) ? 0.5 : -0.5)) >> 0; //about 4x faster than Math.round()
+				if (pt.m) {
+					val = pt.m(val, pt.t);
 				} else if (val < min && val > -min) {
 					val = 0;
 				}
@@ -295,4 +308,17 @@
 
 	});
 
-}); if (window._gsDefine) { window._gsQueue.pop()(); }
+}); if (_gsScope._gsDefine) { _gsScope._gsQueue.pop()(); }
+//export to AMD/RequireJS and CommonJS/Node (precursor to full modular build system coming at a later date)
+(function(name) {
+	"use strict";
+	var getGlobal = function() {
+		return (_gsScope.GreenSockGlobals || _gsScope)[name];
+	};
+	if (typeof(define) === "function" && define.amd) { //AMD
+		define(["TweenLite"], getGlobal);
+	} else if (typeof(module) !== "undefined" && module.exports) { //node
+		require("../TweenLite.js");
+		module.exports = getGlobal();
+	}
+}("EaselPlugin"));
